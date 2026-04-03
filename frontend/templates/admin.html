@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TinyLLM - 管理后台</title>
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+</head>
+<body>
+    <div id="app">
+        <el-container class="app-container">
+            <el-header class="app-header">
+                <div class="header-content">
+                    <div class="logo">
+                        <h1>TinyLLM 管理后台</h1>
+                    </div>
+                    <div class="user-info">
+                        <span>{{ user.username }}</span>
+                        <el-button type="danger" size="small" @click="logout">退出</el-button>
+                    </div>
+                </div>
+            </el-header>
+            
+            <el-container>
+                <el-aside width="200px" class="app-aside">
+                    <el-menu
+                        :default-active="activeMenu"
+                        @select="handleMenuSelect"
+                        class="el-menu-vertical">
+                        <el-menu-item index="dashboard">
+                            <el-icon><data-analysis /></el-icon>
+                            <span>仪表盘</span>
+                        </el-menu-item>
+                        <el-menu-item index="users">
+                            <el-icon><user /></el-icon>
+                            <span>用户管理</span>
+                        </el-menu-item>
+                        <el-menu-item index="devices">
+                            <el-icon><monitor /></el-icon>
+                            <span>设备管理</span>
+                        </el-menu-item>
+                        <el-menu-item index="datasets">
+                            <el-icon><folder /></el-icon>
+                            <span>数据集管理</span>
+                        </el-menu-item>
+                        <el-menu-item index="tasks">
+                            <el-icon><list /></el-icon>
+                            <span>任务管理</span>
+                        </el-menu-item>
+                        <el-menu-item index="deployments">
+                            <el-icon><connection /></el-icon>
+                            <span>部署管理</span>
+                        </el-menu-item>
+                    </el-menu>
+                </el-aside>
+                
+                <el-main class="app-main">
+                    <div v-if="activeMenu === 'dashboard'" class="dashboard">
+                        <el-row :gutter="20">
+                            <el-col :span="6">
+                                <el-card class="stat-card">
+                                    <div class="stat-content">
+                                        <div class="stat-icon users">
+                                            <el-icon><user /></el-icon>
+                                        </div>
+                                        <div class="stat-info">
+                                            <div class="stat-value">{{ dashboard.total_users }}</div>
+                                            <div class="stat-label">总用户数</div>
+                                        </div>
+                                    </div>
+                                </el-card>
+                            </el-col>
+                            <el-col :span="6">
+                                <el-card class="stat-card">
+                                    <div class="stat-content">
+                                        <div class="stat-icon devices">
+                                            <el-icon><monitor /></el-icon>
+                                        </div>
+                                        <div class="stat-info">
+                                            <div class="stat-value">{{ dashboard.total_devices }}</div>
+                                            <div class="stat-label">总设备数</div>
+                                        </div>
+                                    </div>
+                                </el-card>
+                            </el-col>
+                            <el-col :span="6">
+                                <el-card class="stat-card">
+                                    <div class="stat-content">
+                                        <div class="stat-icon online">
+                                            <el-icon><circle-check /></el-icon>
+                                        </div>
+                                        <div class="stat-info">
+                                            <div class="stat-value">{{ dashboard.online_devices }}</div>
+                                            <div class="stat-label">在线设备</div>
+                                        </div>
+                                    </div>
+                                </el-card>
+                            </el-col>
+                            <el-col :span="6">
+                                <el-card class="stat-card">
+                                    <div class="stat-content">
+                                        <div class="stat-icon models">
+                                            <el-icon><box /></el-icon>
+                                        </div>
+                                        <div class="stat-info">
+                                            <div class="stat-value">{{ dashboard.total_models }}</div>
+                                            <div class="stat-label">总模型数</div>
+                                        </div>
+                                    </div>
+                                </el-card>
+                            </el-col>
+                        </el-row>
+                        
+                        <el-row :gutter="20" style="margin-top: 20px;">
+                            <el-col :span="6">
+                                <el-card class="stat-card">
+                                    <div class="stat-content">
+                                        <div class="stat-icon deployments">
+                                            <el-icon><connection /></el-icon>
+                                        </div>
+                                        <div class="stat-info">
+                                            <div class="stat-value">{{ dashboard.total_deployments }}</div>
+                                            <div class="stat-label">总部署数</div>
+                                        </div>
+                                    </div>
+                                </el-card>
+                            </el-col>
+                            <el-col :span="6">
+                                <el-card class="stat-card">
+                                    <div class="stat-content">
+                                        <div class="stat-icon active">
+                                            <el-icon><video-play /></el-icon>
+                                        </div>
+                                        <div class="stat-info">
+                                            <div class="stat-value">{{ dashboard.active_deployments }}</div>
+                                            <div class="stat-label">活跃部署</div>
+                                        </div>
+                                    </div>
+                                </el-card>
+                            </el-col>
+                            <el-col :span="6">
+                                <el-card class="stat-card">
+                                    <div class="stat-content">
+                                        <div class="stat-icon pending">
+                                            <el-icon><clock /></el-icon>
+                                        </div>
+                                        <div class="stat-info">
+                                            <div class="stat-value">{{ dashboard.pending_tasks }}</div>
+                                            <div class="stat-label">待处理任务</div>
+                                        </div>
+                                    </div>
+                                </el-card>
+                            </el-col>
+                            <el-col :span="6">
+                                <el-card class="stat-card">
+                                    <div class="stat-content">
+                                        <div class="stat-icon running">
+                                            <el-icon><loading /></el-icon>
+                                        </div>
+                                        <div class="stat-info">
+                                            <div class="stat-value">{{ dashboard.running_tasks }}</div>
+                                            <div class="stat-label">运行中任务</div>
+                                        </div>
+                                    </div>
+                                </el-card>
+                            </el-col>
+                        </el-row>
+                    </div>
+                    
+                    <div v-if="activeMenu === 'users'" class="users">
+                        <el-card>
+                            <template #header>
+                                <span>用户管理</span>
+                            </template>
+                            
+                            <el-table :data="users" style="width: 100%">
+                                <el-table-column prop="id" label="ID" width="80" />
+                                <el-table-column prop="username" label="用户名" />
+                                <el-table-column prop="email" label="邮箱" />
+                                <el-table-column prop="points" label="积分" width="100" />
+                                <el-table-column prop="role" label="角色" width="100">
+                                    <template #default="{ row }">
+                                        <el-tag :type="row.role === 'admin' ? 'danger' : 'primary'">{{ row.role }}</el-tag>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="status" label="状态" width="100">
+                                    <template #default="{ row }">
+                                        <el-tag :type="getUserStatusType(row.status)">{{ row.status }}</el-tag>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="created_at" label="创建时间" width="180">
+                                    <template #default="{ row }">
+                                        {{ formatDate(row.created_at) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="操作" width="200">
+                                    <template #default="{ row }">
+                                        <el-button v-if="row.status === 'active'" type="warning" size="small" @click="banUser(row.id)">封禁</el-button>
+                                        <el-button v-if="row.status === 'banned'" type="success" size="small" @click="unbanUser(row.id)">解封</el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </el-card>
+                    </div>
+                    
+                    <div v-if="activeMenu === 'devices'" class="devices">
+                        <el-card>
+                            <template #header>
+                                <span>设备管理</span>
+                            </template>
+                            
+                            <el-table :data="devices" style="width: 100%">
+                                <el-table-column prop="id" label="ID" width="80" />
+                                <el-table-column prop="device_name" label="设备名称" />
+                                <el-table-column prop="ip" label="IP地址" />
+                                <el-table-column prop="gpu_info" label="GPU信息" />
+                                <el-table-column prop="vram_total" label="显存总量(MB)" width="120" />
+                                <el-table-column prop="vram_free" label="可用显存(MB)" width="120" />
+                                <el-table-column prop="status" label="状态" width="100">
+                                    <template #default="{ row }">
+                                        <el-tag :type="getDeviceStatusType(row.status)">{{ row.status }}</el-tag>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="last_heartbeat" label="最后心跳" width="180">
+                                    <template #default="{ row }">
+                                        {{ formatDate(row.last_heartbeat) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="操作" width="120">
+                                    <template #default="{ row }">
+                                        <el-button type="danger" size="small" @click="deleteDevice(row.id)">删除</el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </el-card>
+                    </div>
+                    
+                    <div v-if="activeMenu === 'datasets'" class="datasets">
+                        <el-card>
+                            <template #header>
+                                <span>数据集管理</span>
+                            </template>
+                            
+                            <el-table :data="datasets" style="width: 100%">
+                                <el-table-column prop="id" label="ID" width="80" />
+                                <el-table-column prop="username" label="用户" />
+                                <el-table-column prop="filename" label="文件名" />
+                                <el-table-column prop="size" label="大小" width="120">
+                                    <template #default="{ row }">
+                                        {{ formatSize(row.size) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="sample_count" label="样本数" width="100" />
+                                <el-table-column prop="created_at" label="创建时间" width="180">
+                                    <template #default="{ row }">
+                                        {{ formatDate(row.created_at) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="操作" width="120">
+                                    <template #default="{ row }">
+                                        <el-button type="danger" size="small" @click="deleteDataset(row.id)">删除</el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </el-card>
+                    </div>
+                    
+                    <div v-if="activeMenu === 'tasks'" class="tasks">
+                        <el-card>
+                            <template #header>
+                                <div class="card-header">
+                                    <span>任务管理</span>
+                                    <el-button type="primary" @click="checkOfflineDevices">检查离线设备</el-button>
+                                </div>
+                            </template>
+                            
+                            <el-table :data="tasks" style="width: 100%">
+                                <el-table-column prop="id" label="ID" width="80" />
+                                <el-table-column prop="username" label="用户" />
+                                <el-table-column prop="model_name" label="模型名称" />
+                                <el-table-column prop="base_model" label="基础模型" />
+                                <el-table-column prop="status" label="状态" width="100">
+                                    <template #default="{ row }">
+                                        <el-tag :type="getTaskStatusType(row.status)">{{ row.status }}</el-tag>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="progress" label="进度" width="150">
+                                    <template #default="{ row }">
+                                        <el-progress :percentage="row.progress" />
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="created_at" label="创建时间" width="180">
+                                    <template #default="{ row }">
+                                        {{ formatDate(row.created_at) }}
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </el-card>
+                    </div>
+                    
+                    <div v-if="activeMenu === 'deployments'" class="deployments">
+                        <el-card>
+                            <template #header>
+                                <div class="card-header">
+                                    <span>部署管理</span>
+                                    <el-button type="primary" @click="checkExpiredDeployments">检查过期部署</el-button>
+                                </div>
+                            </template>
+                            
+                            <el-table :data="deployments" style="width: 100%">
+                                <el-table-column prop="id" label="ID" width="80" />
+                                <el-table-column prop="username" label="用户" />
+                                <el-table-column prop="model_name" label="模型名称" />
+                                <el-table-column prop="device_name" label="设备名称" />
+                                <el-table-column prop="port" label="端口" width="80" />
+                                <el-table-column prop="status" label="状态" width="100">
+                                    <template #default="{ row }">
+                                        <el-tag :type="getDeploymentStatusType(row.status)">{{ row.status }}</el-tag>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="expires_at" label="过期时间" width="180">
+                                    <template #default="{ row }">
+                                        {{ formatDate(row.expires_at) }}
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </el-card>
+                    </div>
+                </el-main>
+            </el-container>
+        </el-container>
+    </div>
+
+    <script src="/static/js/admin.js"></script>
+</body>
+</html>

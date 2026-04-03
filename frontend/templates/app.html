@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TinyLLM - 微调平台</title>
+    <link rel="stylesheet" href="/static/css/app.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    
+    <style>
+        .recharge-content {
+            padding: 10px 0;
+        }
+        .qr-code-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f5f7fa;
+            border-radius: 8px;
+        }
+        .qr-code {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .qr-code .el-image {
+            width: 200px;
+            height: 200px;
+        }
+        .payment-info {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ebeef5;
+        }
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        .info-item .label {
+            color: #606266;
+            font-weight: 500;
+        }
+        .info-item .value {
+            color: #303133;
+            font-weight: 600;
+        }
+        .info-item .value.amount {
+            color: #f56c6c;
+            font-size: 18px;
+        }
+        .info-item .value.points {
+            color: #67c23a;
+            font-size: 18px;
+        }
+        .info-item.warning {
+            color: #e6a23c;
+        }
+        .info-item.warning .value {
+            color: #e6a23c;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <el-container class="app-container">
+            <el-header class="app-header">
+                <div class="header-content">
+                    <div class="logo">
+                        <h1>TinyLLM</h1>
+                    </div>
+                    <div class="user-info">
+                        <el-dropdown @command="handleCommand">
+                            <span class="username">
+                                {{ user.username || '用户' }}
+                                <el-icon><arrow-down /></el-icon>
+                            </span>
+                            <template #dropdown>
+                                <el-dropdown-menu>
+                                    <el-dropdown-item command="profile">个人资料</el-dropdown-item>
+                                    <el-dropdown-item command="recharge">充值</el-dropdown-item>
+                                    <el-dropdown-item command="contact">联系客服</el-dropdown-item>
+                                    <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+                                </el-dropdown-menu>
+                            </template>
+                        </el-dropdown>
+                    </div>
+                </div>
+            </el-header>
+            
+            <el-container>
+                <el-aside width="200px" class="app-aside">
+                    <el-menu :default-active="activeMenu" @select="handleMenuSelect" class="el-menu-vertical">
+                        <el-menu-item index="dashboard">
+                            <el-icon><house /></el-icon>
+                            <span>仪表盘</span>
+                        </el-menu-item>
+                        <el-menu-item index="datasets">
+                            <el-icon><document /></el-icon>
+                            <span>数据集</span>
+                        </el-menu-item>
+                        <el-menu-item index="training">
+                            <el-icon><cpu /></el-icon>
+                            <span>训练任务</span>
+                        </el-menu-item>
+                        <el-menu-item index="models">
+                            <el-icon><box /></el-icon>
+                            <span>我的模型</span>
+                        </el-menu-item>
+                        <el-menu-item index="community">
+                            <el-icon><chat-line-square /></el-icon>
+                            <span>社区</span>
+                        </el-menu-item>
+                    </el-menu>
+                </el-aside>
+                
+                <el-main class="app-main">
+                    <div v-if="activeMenu === 'dashboard'" class="dashboard">
+                        <el-row :gutter="20">
+                            <el-col :span="8">
+                                <el-card class="stat-card">
+                                    <div class="stat-content">
+                                        <div class="stat-icon points"><el-icon><coin /></el-icon></div>
+                                        <div class="stat-info">
+                                            <div class="stat-value">{{ user.points || 0 }}</div>
+                                            <div class="stat-label">积分</div>
+                                        </div>
+                                    </div>
+                                </el-card>
+                            </el-col>
+                            <el-col :span="8">
+                                <el-card class="stat-card">
+                                    <div class="stat-content">
+                                        <div class="stat-icon models"><el-icon><box /></el-icon></div>
+                                        <div class="stat-info">
+                                            <div class="stat-value">{{ stats.models }}</div>
+                                            <div class="stat-label">模型</div>
+                                        </div>
+                                    </div>
+                                </el-card>
+                            </el-col>
+                            <el-col :span="8">
+                                <el-card class="stat-card">
+                                    <div class="stat-content">
+                                        <div class="stat-icon deployments"><el-icon><connection /></el-icon></div>
+                                        <div class="stat-info">
+                                            <div class="stat-value">{{ stats.deployments }}</div>
+                                            <div class="stat-label">部署</div>
+                                        </div>
+                                    </div>
+                                </el-card>
+                            </el-col>
+                        </el-row>
+                        
+                        <el-card class="info-card" style="margin-top: 20px;">
+                            <template #header><span>使用说明</span></template>
+                            <div class="info-content">
+                                <h3>积分规则</h3>
+                                <ul>
+                                    <li>初始积分：10积分</li>
+                                    <li>训练模型：根据模型大小计算（成功才扣费）</li>
+                                    <li>训练费用：0.5B-0.6B：30积分，1.3B-1.8B：35积分，2B-3B：38-40积分，4B：45积分，6B-7B：45-50积分</li>
+                                    <li>部署模型：根据模型大小和数据量计算，最低1积分/天</li>
+                                    <li>0.6B底座+1000条数据内：1积分/天</li>
+                                    <li>4B底座+1000条数据：6积分/天</li>
+                                    <li>每5000条数据多加1积分</li>
+                                    <li>训练失败或取消会退还积分</li>
+                                </ul>
+                                <h3>使用流程</h3>
+                                <ol>
+                                    <li>上传JSONL格式数据集</li>
+                                    <li>创建训练任务，选择基础模型</li>
+                                    <li>等待训练完成（自动扣费）</li>
+                                    <li>部署模型并测试效果</li>
+                                </ol>
+                            </div>
+                        </el-card>
+                    </div>
+                    
+                    <div v-if="activeMenu === 'datasets'" class="datasets">
+                        <el-card>
+                            <template #header>
+                                <div class="card-header">
+                                    <span>我的数据集</span>
+                                    <el-button type="primary" @click="showUploadDialog = true">
+                                        <el-icon><upload /></el-icon> 上传
+                                    </el-button>
+                                </div>
+                            </template>
+                            <el-table :data="datasets" style="width: 100%">
+                                <el-table-column prop="filename" label="文件名" min-width="200" />
+                                <el-table-column prop="sample_count" label="样本数" width="100" align="center" />
+                                <el-table-column prop="size" label="大小" width="120" align="center">
+                                    <template #default="{ row }">{{ formatSize(row.size) }}</template>
+                                </el-table-column>
+                                <el-table-column prop="created_at" label="创建时间" width="180">
+                                    <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
+                                </el-table-column>
+                                <el-table-column label="操作" width="100" align="center">
+                                    <template #default="{ row }">
+                                        <el-button type="danger" size="small" @click="deleteDataset(row.id)">删除</el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </el-card>
+                    </div>
+                    
+                    <div v-if="activeMenu === 'training'" class="training">
+                        <el-card>
+                            <template #header>
+                                <div class="card-header">
+                                    <span>训练任务</span>
+                                    <el-button type="primary" @click="showCreateTaskDialog = true">
+                                        <el-icon><plus /></el-icon> 创建任务
+                                    </el-button>
+                                </div>
+                            </template>
+                            <el-table :data="tasks" style="width: 100%">
+                                <el-table-column prop="model_name" label="模型名称" min-width="150" />
+                                <el-table-column prop="base_model" label="基础模型" width="150" />
+                                <el-table-column prop="status" label="状态" width="100" align="center">
+                                    <template #default="{ row }">
+                                        <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="created_at" label="创建时间" width="180">
+                                    <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
+                                </el-table-column>
+                                <el-table-column label="操作" width="300" align="center">
+                                    <template #default="{ row }">
+                                        <el-button v-if="row.status === 'pending' || row.status === 'running'" 
+                                                  type="warning" size="small" @click="cancelTask(row.id)">取消</el-button>
+                                        <el-button type="info" size="small" @click="viewTrainingLog(row)">日志</el-button>
+                                        <el-button v-if="row.status === 'failed' || row.status === 'cancelled'" 
+                                                  type="primary" size="small" @click="restartTask(row.id)">重试</el-button>
+                                        <el-button v-if="row.status === 'completed' || row.status === 'failed' || row.status === 'cancelled'" 
+                                                  type="danger" size="small" @click="deleteTask(row.id)">删除</el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </el-card>
+                    </div>
+                    
+                    <div v-if="activeMenu === 'models'" class="models">
+                        <el-card>
+                            <template #header>
+                                <div class="card-header">
+                                    <span>我的模型</span>
+                                </div>
+                            </template>
+                            <el-table :data="modelsWithDeployment" style="width: 100%" v-if="modelsWithDeployment.length > 0">
+                                <el-table-column prop="model_name" label="模型名称" min-width="200">
+                                    <template #default="{ row }">
+                                        <span style="color: #333; font-weight: 500;">{{ row.model_name }}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="status" label="训练状态" width="100" align="center">
+                                    <template #default="{ row }">
+                                        <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="deployment_status" label="部署状态" width="100" align="center">
+                                    <template #default="{ row }">
+                                        <el-tag v-if="row.deployment_status" type="success">已部署</el-tag>
+                                        <el-tag v-else type="info">未部署</el-tag>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="API地址" min-width="200">
+                                    <template #default="{ row }">
+                                        <span v-if="row.api_url" class="api-url">{{ row.api_url }}</span>
+                                        <el-button v-if="row.api_url" type="primary" size="small" @click="copyApiUrl(row.api_url)">复制</el-button>
+                                        <span v-else class="api-url-stopped">-</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="API Key" min-width="200">
+                                    <template #default="{ row }">
+                                        <span v-if="row.api_key" class="api-key">{{ row.api_key }}</span>
+                                        <el-button v-if="row.api_key" type="primary" size="small" @click="copyApiKey(row.api_key)">复制</el-button>
+                                        <span v-else class="api-url-stopped">-</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="操作" width="320" align="center">
+                                    <template #default="{ row }">
+                                        <template v-if="row.deployment_status">
+                                            <el-button type="success" size="small" @click="openTestDialog(row)">测试</el-button>
+                                            <el-button type="info" size="small" @click="viewLogs(row)">日志</el-button>
+                                            <el-button type="warning" size="small" @click="openRenewDialog(row)">续期</el-button>
+                                            <el-button type="danger" size="small" @click="stopDeployment(row.deployment_id)">停止</el-button>
+                                        </template>
+                                        <template v-else>
+                                            <div style="margin-bottom: 5px; font-size: 11px; color: #999;">状态: {{ row.status }}</div>
+                                            <el-button v-if="row.status === 'trained'" type="primary" size="small" @click="deployModel(row.id)">部署</el-button>
+                                            <el-button v-else type="default" size="small" disabled>未训练完成</el-button>
+                                            <el-button type="danger" size="small" @click="deleteModel(row.id)">删除</el-button>
+                                        </template>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                            <div v-else style="padding: 40px; text-align: center; color: #999;">
+                                <p style="margin-bottom: 10px;">暂无模型数据</p>
+                                <p style="font-size: 12px;">调试信息: models数量={{ models.length }}, deployments数量={{ deployments.length }}</p>
+                            </div>
+                        </el-card>
+                    </div>
+                    
+                    <div v-if="activeMenu === 'community'" class="community">
+                        <el-card>
+                            <template #header>
+                                <div class="card-header">
+                                    <span>社区分享</span>
+                                </div>
+                            </template>
+                            
+                            <div class="community-content">
+                                <el-result icon="warning" title="功能开发中" sub-title="社区分享功能正在完善中，暂时不开放，敬请期待！">
+                                    <template #extra>
+                                        <el-button type="primary" @click="activeMenu = 'home'">返回首页</el-button>
+                                    </template>
+                                </el-result>
+                            </div>
+                        </el-card>
+                    </div>
+                </el-main>
+            </el-container>
+        </el-container>
+        
+        <el-dialog v-model="showUploadDialog" title="上传数据集" width="500px">
+            <el-upload :auto-upload="false" :limit="1" accept=".jsonl" :on-change="handleFileChange">
+                <el-button type="primary">选择JSONL文件</el-button>
+                <template #tip><div class="el-upload__tip">只支持JSONL格式</div></template>
+            </el-upload>
+            <template #footer>
+                <el-button @click="showUploadDialog = false">取消</el-button>
+                <el-button type="primary" @click="uploadDataset" :loading="uploading">上传</el-button>
+            </template>
+        </el-dialog>
+        
+        <el-dialog v-model="showCreateTaskDialog" title="创建训练任务" width="600px">
+            <el-form :model="taskForm" label-width="100px">
+                <el-form-item label="模型名称">
+                    <el-input v-model="taskForm.model_name" placeholder="输入模型名称" />
+                    <div class="form-tip">只能包含中文、英文字母、数字和下划线，且不能以数字开头</div>
+                </el-form-item>
+                <el-form-item label="基础模型">
+                    <el-select v-model="taskForm.base_model" placeholder="选择基础模型" style="width: 100%">
+                        <el-option v-for="m in baseModels" :key="m.name" :label="m.name" :value="m.name">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>{{ m.name }}</span>
+                                <span style="color: #999; font-size: 12px;">{{ m.size }}B | 训练: {{ m.training_cost?.min }}积分</span>
+                            </div>
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="数据集">
+                    <el-select v-model="taskForm.dataset_id" placeholder="选择数据集" style="width: 100%">
+                        <el-option v-for="ds in datasets" :key="ds.id" :label="ds.filename" :value="ds.id" />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="训练轮数">
+                    <el-input-number v-model="taskForm.num_epochs" :min="1" :max="20" style="width: 100%" />
+                    <div class="form-tip">训练轮数越多，模型效果越好，但训练时间也会更长</div>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="showCreateTaskDialog = false">取消</el-button>
+                <el-button type="primary" @click="createTask" :loading="creating">创建</el-button>
+            </template>
+        </el-dialog>
+        
+        <el-dialog v-model="showTestDialog" width="700px">
+            <template #header>
+                <span>测试: {{ testDeployment?.model_name || '未知模型' }}</span>
+            </template>
+            <div class="test-container">
+                <div class="test-messages" ref="testMessagesRef">
+                    <div v-for="(msg, i) in testMessages" :key="i" :class="['test-message', msg.role]">
+                        <div class="message-role">{{ msg.role === 'user' ? '你' : 'AI' }}</div>
+                        <div class="message-content">{{ msg.content }}</div>
+                    </div>
+                    <div v-if="testStreaming" class="test-message assistant">
+                        <div class="message-role">AI</div>
+                        <div class="message-content">{{ testCurrentContent }}<span class="typing-cursor">|</span></div>
+                    </div>
+                </div>
+                <div class="test-input">
+                    <el-input v-model="testInput" placeholder="输入消息..." @keyup.enter="sendTestMessage" :disabled="testStreaming">
+                        <template #append>
+                            <el-button type="primary" @click="sendTestMessage" :loading="testStreaming">发送</el-button>
+                        </template>
+                    </el-input>
+                </div>
+            </div>
+        </el-dialog>
+        
+        <el-dialog v-model="showLogDialog" width="900px">
+            <template #header>
+                <span>日志: {{ currentModel?.model_name || '未知模型' }}</span>
+            </template>
+            <div class="log-container">
+                <div class="log-messages" ref="logMessagesRef">
+                    <div v-for="(log, i) in logs" :key="i" :class="['log-message', 'log-' + log.level.toLowerCase()]">
+                        <div class="log-header">
+                            <span class="log-time">{{ formatDate(log.created_at) }}</span>
+                            <el-tag :type="getLogType(log.log_type)" size="small">{{ log.log_type === 'training' ? '训练' : '部署' }}</el-tag>
+                            <el-tag :type="getLogLevel(log.level)" size="small">{{ log.level }}</el-tag>
+                        </div>
+                        <div class="log-content">{{ log.message }}</div>
+                    </div>
+                </div>
+            </div>
+        </el-dialog>
+        
+        <el-dialog v-model="showDeployDialog" title="部署模型" width="500px">
+            <el-form label-width="100px">
+                <el-form-item label="部署时长">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <el-input-number v-model="deployForm.hours" :min="24" :max="720" :step="24" style="width: 150px;" />
+                        <el-button type="primary" size="small" @click="deployForm.hours = Math.min(deployForm.hours + 24, 720)">+24h</el-button>
+                        <span style="color: #666; font-size: 14px;">小时</span>
+                    </div>
+                    <div class="form-tip">最低24小时，每次增加24小时，费用根据模型大小和数据量计算</div>
+                </el-form-item>
+                <el-form-item label="预计费用">
+                    <span v-if="deployForm.cost === '计算中...'" style="font-size: 16px; font-weight: bold; color: #999;">计算中...</span>
+                    <span v-else-if="deployForm.cost === '未知' || deployForm.cost === '计算失败'" style="font-size: 16px; font-weight: bold; color: #f56c6c;">{{ deployForm.cost }}</span>
+                    <div v-else style="display: flex; flex-direction: column; gap: 5px;">
+                        <span style="font-size: 16px; font-weight: bold; color: #f56c6c;">{{ deployForm.cost }} 积分/天</span>
+                        <span style="font-size: 14px; color: #666;">总计：{{ deployForm.totalCost }} 积分 ({{ deployForm.hours }}小时)</span>
+                    </div>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="showDeployDialog = false">取消</el-button>
+                <el-button type="primary" @click="confirmDeploy" :loading="deploying">确定部署</el-button>
+            </template>
+        </el-dialog>
+        
+        <el-dialog v-model="showRenewDialog" title="续期部署" width="450px">
+            <div v-if="renewDeployment" style="margin-bottom: 15px;">
+                <p><strong>模型名称:</strong> {{ renewDeployment.model_name }}</p>
+                <p><strong>当前到期时间:</strong> {{ formatDateTime(renewDeployment.expires_at) }}</p>
+            </div>
+            <el-form label-width="100px">
+                <el-form-item label="续期时长">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <el-input-number v-model="renewForm.hours" :min="24" :max="720" :step="24" style="width: 150px;" />
+                        <el-button type="primary" size="small" @click="renewForm.hours = Math.min(renewForm.hours + 24, 720)">+24h</el-button>
+                        <span style="color: #666; font-size: 14px;">小时</span>
+                    </div>
+                    <div class="form-tip">最低24小时，每次增加24小时</div>
+                </el-form-item>
+                <el-form-item label="续期费用">
+                    <span v-if="renewForm.cost === '计算中...'" style="font-size: 16px; font-weight: bold; color: #999;">计算中...</span>
+                    <span v-else-if="renewForm.cost === '未知' || renewForm.cost === '计算失败'" style="font-size: 16px; font-weight: bold; color: #f56c6c;">{{ renewForm.cost }}</span>
+                    <span v-else style="font-size: 16px; font-weight: bold; color: #f56c6c;">{{ renewForm.cost }} 积分</span>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="showRenewDialog = false">取消</el-button>
+                <el-button type="primary" @click="confirmRenew" :loading="renewing">确认续期</el-button>
+            </template>
+        </el-dialog>
+        
+        <el-dialog v-model="showTrainingLogDialog" width="700px">
+            <template #header>
+                <span>训练日志: {{ trainingLogTask?.model_name || '未知模型' }}</span>
+            </template>
+            <div class="training-log-container">
+                <div class="log-info">
+                    <el-tag type="info" v-if="trainingLogTask?.base_model">基础模型: {{ trainingLogTask.base_model }}</el-tag>
+                    <el-tag :type="getStatusType(trainingLogTask?.status)" style="margin-left: 10px;" v-if="trainingLogTask?.status">{{ getStatusText(trainingLogTask.status) }}</el-tag>
+                    <el-tag type="success" style="margin-left: 10px;" v-if="trainingLogTask?.progress">进度: {{ Math.round(trainingLogTask.progress * 100) }}%</el-tag>
+                </div>
+                <div class="log-content" ref="trainingLogRef">
+                    <pre v-if="trainingLogContent">{{ trainingLogContent }}</pre>
+                    <div v-else style="color: #999; text-align: center; padding: 20px;">暂无日志</div>
+                </div>
+            </div>
+            <template #footer>
+                <el-button @click="showTrainingLogDialog = false">关闭</el-button>
+                <el-button type="primary" @click="loadTrainingLog" :loading="loadingTrainingLog">刷新</el-button>
+            </template>
+        </el-dialog>
+        
+        <el-dialog v-model="showProfileDialog" title="个人资料" width="500px">
+            <el-form :model="profileForm" label-width="100px">
+                <el-form-item label="用户名">
+                    <el-input v-model="profileForm.username" placeholder="输入新用户名" />
+                </el-form-item>
+                <el-form-item label="邮箱">
+                    <el-input v-model="profileForm.email" disabled />
+                </el-form-item>
+                <el-form-item label="当前积分">
+                    <span style="font-size: 16px; font-weight: bold; color: #2563EB;">{{ user.points || 0 }} 积分</span>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="showProfileDialog = false">取消</el-button>
+                <el-button type="primary" @click="updateProfile" :loading="updatingProfile">保存</el-button>
+            </template>
+        </el-dialog>
+
+        <el-dialog v-model="showRechargeDialog" title="充值积分" width="500px">
+            <div class="recharge-content">
+                <el-form :model="rechargeForm" label-width="80px">
+                    <el-form-item label="充值积分">
+                        <el-input-number v-model="rechargeForm.points" :min="10" :max="500" :step="10" placeholder="请输入充值积分" />
+                    </el-form-item>
+                    <el-form-item label="支付金额">
+                        <el-input v-model="rechargeAmount" readonly>
+                            <template #append>元</template>
+                        </el-input>
+                    </el-form-item>
+                </el-form>
+                
+                <div class="qr-code-section" v-if="currentOrder">
+                    <div class="qr-code">
+                        <img src="/static/wx.png" alt="微信支付二维码" style="width: 200px; height: 200px;" />
+                    </div>
+                    <div class="payment-info">
+                        <div class="info-item">
+                            <span class="label">订单号：</span>
+                            <span class="value">{{ currentOrder.order_no }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">支付金额：</span>
+                            <span class="value amount">{{ currentOrder.amount }} 元</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">获得积分：</span>
+                            <span class="value points">{{ currentOrder.points }} 积分</span>
+                        </div>
+                        <div class="info-item warning">
+                            <span class="label">支付倒计时：</span>
+                            <span class="value">{{ countdown }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">支付方式：</span>
+                            <span class="value">微信支付</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <template #footer>
+                <el-button @click="showRechargeDialog = false">取消</el-button>
+                <el-button type="primary" @click="createRechargeOrder" :loading="creatingRechargeOrder" v-if="!currentOrder">创建订单</el-button>
+                <el-button type="success" @click="checkPaymentStatus" :loading="checkingPayment" v-else>检查支付</el-button>
+            </template>
+        </el-dialog>
+    </div>
+    
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

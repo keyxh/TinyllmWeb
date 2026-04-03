@@ -1,0 +1,186 @@
+{
+  "models": [
+    {
+      "name": "Qwen/Qwen3-0.6B",
+      "size": 0.6,
+      "enable": true,
+      "training_cost": {
+        "min": 30.0,
+        "max": 30.0
+      },
+      "deploy_cost_per_day": {
+        "min": 2.0,
+        "max": 2.0
+      }
+    },
+    {
+      "name": "Qwen/Qwen3-1.8B",
+      "size": 1.8,
+      "enable": true,
+      "training_cost": {
+        "min": 30.0,
+        "max": 30.0
+      },
+      "deploy_cost_per_day": {
+        "min": 2.0,
+        "max": 2.0
+      }
+    },
+    {
+      "name": "Qwen/Qwen3-4B",
+      "size": 4.0,
+      "enable": true,
+      "training_cost": {
+        "min": 40.0,
+        "max": 40.0
+      },
+      "deploy_cost_per_day": {
+        "min": 3.0,
+        "max": 3.0
+      }
+    },
+    {
+      "name": "Qwen/Qwen3-14B",
+      "size": 14.0,
+      "enable": false,
+      "training_cost": {
+        "min": 100.0,
+        "max": 100.0
+      },
+      "deploy_cost_per_day": {
+        "min": 10.0,
+        "max": 10.0
+      }
+    },
+    {
+      "name": "Qwen/Qwen2.5-0.5B-Instruct",
+      "size": 0.5,
+      "enable": true,
+      "training_cost": {
+        "min": 30.0,
+        "max": 30.0
+      },
+      "deploy_cost_per_day": {
+        "min": 2.0,
+        "max": 2.0
+      }
+    },
+    {
+      "name": "Qwen/Qwen2.5-1.5B-Instruct",
+      "size": 1.5,
+      "enable": true,
+      "training_cost": {
+        "min": 30.0,
+        "max": 30.0
+      },
+      "deploy_cost_per_day": {
+        "min": 2.0,
+        "max": 2.0
+      }
+    },
+    {
+      "name": "Qwen/Qwen2.5-3B-Instruct",
+      "size": 3.0,
+      "enable": true,
+      "training_cost": {
+        "min": 35.0,
+        "max": 35.0
+      },
+      "deploy_cost_per_day": {
+        "min": 2.5,
+        "max": 2.5
+      }
+    },
+    {
+      "name": "Qwen/Qwen2.5-7B-Instruct",
+      "size": 7.0,
+      "enable": true,
+      "training_cost": {
+        "min": 50.0,
+        "max": 50.0
+      },
+      "deploy_cost_per_day": {
+        "min": 5.0,
+        "max": 5.0
+      }
+    },
+    {
+      "name": "qwen/Qwen-0_6B-Chat",
+      "size": 0.6,
+      "enable": true,
+      "training_cost": {
+        "min": 30.0,
+        "max": 30.0
+      },
+      "deploy_cost_per_day": {
+        "min": 2.0,
+        "max": 2.0
+      }
+    },
+    {
+      "name": "qwen/Qwen-1_8B-Chat",
+      "size": 1.8,
+      "enable": true,
+      "training_cost": {
+        "min": 30.0,
+        "max": 30.0
+      },
+      "deploy_cost_per_day": {
+        "min": 2.0,
+        "max": 2.0
+      }
+    },
+    {
+      "name": "baichuan-inc/Baichuan2-7B-Chat",
+      "size": 7.0,
+      "enable": true,
+      "training_cost": {
+        "min": 50.0,
+        "max": 50.0
+      },
+      "deploy_cost_per_day": {
+        "min": 5.0,
+        "max": 5.0
+      }
+    },
+    {
+      "name": "baichuan-inc/Baichuan2-1_3B-Chat",
+      "size": 1.3,
+      "enable": true,
+      "training_cost": {
+        "min": 30.0,
+        "max": 30.0
+      },
+      "deploy_cost_per_day": {
+        "min": 2.0,
+        "max": 2.0
+      }
+    },
+    {
+      "name": "THUDM/chatglm3-6b",
+      "size": 6.0,
+      "enable": true,
+      "training_cost": {
+        "min": 45.0,
+        "max": 45.0
+      },
+      "deploy_cost_per_day": {
+        "min": 4.0,
+        "max": 4.0
+      }
+    },
+    {
+      "name": "AI-ModelScope/gemma-2b-it",
+      "size": 2.0,
+      "enable": true,
+      "training_cost": {
+        "min": 30.0,
+        "max": 30.0
+      },
+      "deploy_cost_per_day": {
+        "min": 2.0,
+        "max": 2.0
+      }
+    }
+  ]
+}

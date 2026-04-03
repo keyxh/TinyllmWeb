@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TinyLLM - 联系客服</title>
+    <link rel="stylesheet" href="/static/css/app.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+</head>
+<body>
+    <div id="app">
+        <el-container class="app-container">
+            <el-header class="app-header">
+                <div class="header-content">
+                    <div class="logo">
+                        <h1>TinyLLM</h1>
+                    </div>
+                    <div class="user-info">
+                        <el-dropdown @command="handleCommand">
+                            <span class="username">
+                                {{ user.username || '用户' }}
+                                <el-icon><arrow-down /></el-icon>
+                            </span>
+                            <template #dropdown>
+                                <el-dropdown-menu>
+                                    <el-dropdown-item command="profile">个人资料</el-dropdown-item>
+                                    <el-dropdown-item command="home">返回首页</el-dropdown-item>
+                                    <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+                                </el-dropdown-menu>
+                            </template>
+                        </el-dropdown>
+                    </div>
+                </div>
+            </el-header>
+            
+            <el-container>
+                <el-main class="app-main">
+                    <el-card class="contact-card">
+                        <template #header>
+                            <div class="card-header">
+                                <span>联系客服</span>
+                            </div>
+                        </template>
+                        <div class="contact-content">
+                            <div class="contact-section">
+                                <h3>联系方式</h3>
+                                <div class="contact-item">
+                                    <div class="contact-label">QQ:</div>
+                                    <div class="contact-value">2511230832</div>
+                                    <el-button type="primary" size="small" @click="copyText('2511230832')">复制</el-button>
+                                </div>
+                                <div class="contact-item">
+                                    <div class="contact-label">邮箱:</div>
+                                    <div class="contact-value">xiaohui032901@foxmail.com</div>
+                                    <el-button type="primary" size="small" @click="copyText('xiaohui032901@foxmail.com')">复制</el-button>
+                                </div>
+                                <div class="contact-item">
+                                    <div class="contact-label">邮箱:</div>
+                                    <div class="contact-value">egpx1s0ej@kkk.rehearsalk.com</div>
+                                    <el-button type="primary" size="small" @click="copyText('egpx1s0ej@kkk.rehearsalk.com')">复制</el-button>
+                                </div>
+                            </div>
+                            
+                            <div class="contact-section">
+                                <h3>常见问题</h3>
+                                <el-collapse>
+                                    <el-collapse-item title="如何获取积分？" name="1">
+                                        <div>初始注册可获得10积分，每日签到可获得1积分。后续将开放充值功能。</div>
+                                    </el-collapse-item>
+                                    <el-collapse-item title="训练模型需要多少积分？" name="2">
+                                        <div>训练模型需要30-100积分，具体费用根据模型大小而定。训练成功后才会扣除积分。</div>
+                                    </el-collapse-item>
+                                    <el-collapse-item title="部署模型需要多少积分？" name="3">
+                                        <div>部署模型需要3积分/天，根据模型大小可能有所不同。</div>
+                                    </el-collapse-item>
+                                    <el-collapse-item title="如何使用API？" name="4">
+                                        <div>在"我的模型"页面部署模型后，可以复制API地址和API Key，然后使用OpenAI兼容的格式调用接口。</div>
+                                    </el-collapse-item>
+                                </el-collapse>
+                            </div>
+                            
+                            <div class="contact-section">
+                                <h3>服务时间</h3>
+                                <p>客服服务时间：周一至周日 9:00 - 21:00</p>
+                                <p>如有紧急问题，请通过QQ或邮箱联系我们，我们会尽快回复。</p>
+                            </div>
+                        </div>
+                    </el-card>
+                </el-main>
+            </el-container>
+        </el-container>
+    </div>
+    
+    <script src="/static/js/contact.js"></script>
+</body>
+</html>

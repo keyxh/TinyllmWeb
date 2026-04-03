@@ -1,0 +1,10 @@
+serverAddr = "38.150.4.149"
+serverPort = 7000
+
+
+[[proxies]]
+name = "minecraft-server"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 8000
+remotePort = 39999

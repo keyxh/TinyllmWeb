@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TinyLLM - 登录</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <div class="login-container">
+            <div class="login-box">
+                <div class="logo">
+                    <h1>TinyLLM</h1>
+                    <p>AI模型微调平台</p>
+                </div>
+                
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('login')">密码登录</button>
+                    <button class="tab-btn" onclick="switchTab('code')">验证码登录</button>
+                </div>
+                
+                <div id="login-form" class="form-container active">
+                    <form onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label>邮箱</label>
+                            <input type="email" id="login-email" required placeholder="请输入邮箱">
+                        </div>
+                        <div class="form-group">
+                            <label>密码</label>
+                            <input type="password" id="login-password" required placeholder="请输入密码">
+                        </div>
+                        <button type="submit" class="submit-btn">登录</button>
+                    </form>
+                </div>
+                
+                <div id="code-form" class="form-container">
+                    <form onsubmit="handleCodeLogin(event)">
+                        <div class="form-group">
+                            <label>邮箱</label>
+                            <input type="email" id="code-email" required placeholder="请输入邮箱">
+                        </div>
+                        <div class="form-group">
+                            <label>验证码</label>
+                            <div class="code-input-group">
+                                <input type="text" id="verification-code" required placeholder="请输入验证码" maxlength="6">
+                                <button type="button" class="send-code-btn" onclick="sendVerificationCode()" id="send-code-btn">发送验证码</button>
+                            </div>
+                        </div>
+                        <button type="submit" class="submit-btn">登录</button>
+                    </form>
+                </div>
+                
+                <div id="message" class="message"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/login.js"></script>
+</body>
+</html>

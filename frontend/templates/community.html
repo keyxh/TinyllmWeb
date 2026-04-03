@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TinyLLM - 社区</title>
+    <link rel="stylesheet" href="/static/css/app.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    
+    <style>
+        .post-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .post-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 8px;
+            cursor: pointer;
+            object-fit: cover;
+        }
+        .post-link {
+            margin-top: 12px;
+            padding: 12px;
+            background: #f5f7fa;
+            border-radius: 8px;
+        }
+        .upload-tip {
+            font-size: 12px;
+            color: #909399;
+            margin-top: 8px;
+        }
+        .post-link .el-link {
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <el-container class="app-container">
+            <el-header class="app-header">
+                <div class="header-content">
+                    <div class="logo">
+                        <h1>TinyLLM</h1>
+                    </div>
+                    <div class="user-info">
+                        <el-dropdown @command="handleCommand">
+                            <span class="username">
+                                {{ user.username || '用户' }}
+                                <el-icon><arrow-down /></el-icon>
+                            </span>
+                            <template #dropdown>
+                                <el-dropdown-menu>
+                                    <el-dropdown-item command="profile">个人资料</el-dropdown-item>
+                                    <el-dropdown-item command="home">返回首页</el-dropdown-item>
+                                    <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+                                </el-dropdown-menu>
+                            </template>
+                        </el-dropdown>
+                    </div>
+                </div>
+            </el-header>
+            
+            <el-container>
+                <el-main class="app-main">
+                    <el-card class="community-card">
+                        <template #header>
+                            <div class="card-header">
+                                <span>社区分享</span>
+                                <el-button type="primary" @click="showCreateDialog = true">
+                                    <el-icon><plus /></el-icon> 发布分享
+                                </el-button>
+                            </div>
+                        </template>
+                        
+                        <div class="community-content">
+                            <div v-if="posts.length === 0" class="empty-state">
+                                <el-empty description="暂无分享内容" />
+                            </div>
+                            
+                            <div v-for="post in posts" :key="post.id" class="post-item">
+                                <div class="post-header">
+                                    <div class="post-author">
+                                        <el-avatar :size="40">{{ post.username.charAt(0).toUpperCase() }}</el-avatar>
+                                        <div class="author-info">
+                                            <div class="author-name">{{ post.username }}</div>
+                                            <div class="post-time">{{ formatDate(post.created_at) }}</div>
+                                        </div>
+                                    </div>
+                                    <el-dropdown v-if="post.user_id === user.id" @command="(cmd) => handlePostCommand(cmd, post)">
+                                        <el-icon class="more-icon"><more-filled /></el-icon>
+                                        <template #dropdown>
+                                            <el-dropdown-menu>
+                                                <el-dropdown-item command="delete">删除</el-dropdown-item>
+                                            </el-dropdown-menu>
+                                        </template>
+                                    </el-dropdown>
+                                </div>
+                                
+                                <div class="post-content">
+                                    <h3>{{ post.title }}</h3>
+                                    <p>{{ post.content }}</p>
+                                </div>
+                                
+                                <div v-if="post.images_list && post.images_list.length > 0" class="post-images">
+                                    <el-image 
+                                        v-for="(img, index) in post.images_list" 
+                                        :key="index"
+                                        :src="img"
+                                        :preview-src-list="post.images_list"
+                                        :initial-index="index"
+                                        fit="cover"
+                                        class="post-image"
+                                    />
+                                </div>
+                                
+                                <div v-if="post.link" class="post-link">
+                                    <el-link :href="post.link" target="_blank" type="primary">
+                                        <el-icon><link /></el-icon> {{ post.link }}
+                                    </el-link>
+                                </div>
+                                
+                                <div class="post-footer">
+                                    <div class="post-stats">
+                                        <span><el-icon><view /></el-icon> {{ post.views || 0 }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </el-card>
+                </el-main>
+            </el-container>
+        </el-container>
+        
+        <el-dialog v-model="showCreateDialog" title="发布分享" width="600px">
+            <el-form :model="postForm" label-width="80px">
+                <el-form-item label="标题">
+                    <el-input v-model="postForm.title" placeholder="输入分享标题" maxlength="100" show-word-limit />
+                </el-form-item>
+                <el-form-item label="内容">
+                    <el-input v-model="postForm.content" type="textarea" :rows="6" placeholder="分享你的模型心得、使用技巧等" maxlength="1000" show-word-limit />
+                </el-form-item>
+                <el-form-item label="应用地址">
+                    <el-input v-model="postForm.app_url" placeholder="分享的应用地址（可选）" />
+                </el-form-item>
+                <el-form-item label="API地址">
+                    <el-input v-model="postForm.api_url" placeholder="分享的API地址（可选）" />
+                </el-form-item>
+                <el-form-item label="图片">
+                    <el-upload
+                        :action="uploadUrl"
+                        :headers="uploadHeaders"
+                        list-type="picture-card"
+                        :file-list="uploadedImages"
+                        :on-success="handleUploadSuccess"
+                        :on-remove="handleUploadRemove"
+                        :on-error="handleUploadError"
+                        :limit="9"
+                        accept="image/*"
+                    >
+                        <el-icon><plus /></el-icon>
+                    </el-upload>
+                    <div class="upload-tip">最多上传9张图片，支持 png、jpg、jpeg、gif、webp</div>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="showCreateDialog = false">取消</el-button>
+                <el-button type="primary" @click="createPost" :loading="creating">发布</el-button>
+            </template>
+        </el-dialog>
+    </div>
+    
+    <script src="/static/js/community.js"></script>
+</body>
+</html>
